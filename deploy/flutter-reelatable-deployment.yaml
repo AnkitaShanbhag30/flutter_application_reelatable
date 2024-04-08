@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flutter-reelatable
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flutter-reelatable
+  template:
+    metadata:
+      labels:
+        app: flutter-reelatable
+    spec:
+      containers:
+      - name: flutter-reelatable
+        image: gcr.io/reelatable/docker-flutter-reelatable:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+
