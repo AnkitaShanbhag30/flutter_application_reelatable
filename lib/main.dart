@@ -40,7 +40,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _sendDataToBackend([String? movieName]) async {
     movieName ??= _textController.text;
-    var url = Uri.parse('http://34.127.31.106 /api');
+    var url = Uri.parse('http://flask-reelatable-service.default.svc.cluster.local:5000/api');
     try {
       var response = await http.post(
         url,
@@ -78,7 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
-              'Enter a movie that you hate',
+              'Enter a movie that you love',
               style: TextStyle(color: Colors.white),
             ),
             const SizedBox(height: 10),
