@@ -78,7 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
-              'Enter a movie that you like',
+              'Enter a movie that spoke to you',
               style: TextStyle(color: Colors.white),
             ),
             const SizedBox(height: 10),
