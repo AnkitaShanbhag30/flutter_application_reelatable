@@ -4,34 +4,34 @@ on:
   pull_request:
     branches:
       - main
-      - master
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v0.4.0
-        with:
-          service_account_key: ${{ secrets.GKE_KEY }}
-          project_id: ${{ secrets.GKE_PROJECT }}
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0.4.0
+      with:
+        service_account_key: ${{ secrets.GKE_KEY }}
+        project_id: ${{ secrets.GKE_PROJECT }}
 
-      - name: Configure Docker
-        run: gcloud auth configure-docker gcr.io --quiet
+    - name: Build Docker image
+      run: |
+        docker build -t gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA .
+    
+    - name: Push Docker image to Google Container Registry
+      run: |
+        gcloud auth configure-docker
+        docker push gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA
 
-      - name: Build and push Docker image
-        run: |
-          docker buildx build --platform linux/amd64,linux/arm64 -t gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:${{ github.sha }} --push .
+    - name: Set up kubectl
+      run: |
+        gcloud components update kubectl
+        gcloud container clusters get-credentials reelatable-cluster --zone us-west1 --project ${{ secrets.GKE_PROJECT }}
 
-      - name: Set up kubectl
-        run: |
-          gcloud components update kubectl
-          gcloud container clusters get-credentials reelatable-cluster --zone us-west1 --project ${{ secrets.GKE_PROJECT }}
-
-      - name: Deploy to Kubernetes
-        run: |
-          kubectl set image deployment/flutter-reelatable flutter-reelatable=gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:${{ github.sha }}
-          kubectl rollout restart deployment/flutter-reelatable
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl set image deployment/flutter-reelatable flutter-reelatable=gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA
