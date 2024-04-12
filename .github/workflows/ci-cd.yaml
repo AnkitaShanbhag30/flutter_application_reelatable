@@ -21,10 +21,10 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA .
+        docker build -t us-central1-docker.pkg.dev/${{ secrets.GKE_PROJECT }}/flutter-reelatable/flutter-reelatable:$GITHUB_SHA .
 
     - name: Configure Docker to use gcloud as a credential helper
-      run: gcloud auth configure-docker --quiet
+      run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
     - name: List Docker Config
       run: cat ~/.docker/config.json
@@ -35,10 +35,9 @@ jobs:
     - name: Print Project Info
       run: gcloud config list project
 
-    - name: Push Docker image to Google Container Registry
+    - name: Push Docker image to Google Artifact Registry
       run: |
-        echo ${{ secrets.GKE_KEY }} | docker login -u _json_key --password-stdin https://gcr.io
-        docker push gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA
+        docker push us-central1-docker.pkg.dev/${{ secrets.GKE_PROJECT }}/flutter-reelatable/flutter-reelatable:$GITHUB_SHA
 
     - name: Set up kubectl
       run: |
@@ -47,4 +46,4 @@ jobs:
 
     - name: Deploy to Kubernetes
       run: |
-        kubectl set image deployment/flutter-reelatable flutter-reelatable=gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA
+        kubectl set image deployment/flutter-reelatable flutter-reelatable=us-central1-docker.pkg.dev/${{ secrets.GKE_PROJECT }}/flutter-reelatable/flutter-reelatable:$GITHUB_SHA
