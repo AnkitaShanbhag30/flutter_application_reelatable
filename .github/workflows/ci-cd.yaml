@@ -25,7 +25,8 @@ jobs:
     
     - name: Push Docker image to Google Container Registry
       run: |
-        gcloud auth configure-docker
+        gcloud auth login
+        gcloud auth configure-docker us-west1-docker.pkg.dev
         docker push gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA
 
     - name: Set up kubectl
