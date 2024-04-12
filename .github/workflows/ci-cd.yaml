@@ -13,26 +13,26 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up Cloud SDK
+    - name: Set up Google Cloud SDK
       uses: google-github-actions/setup-gcloud@v0.4.0
       with:
         service_account_key: ${{ secrets.GKE_KEY }}
         project_id: ${{ secrets.GKE_PROJECT }}
 
-    - name: Build Docker image
+    - name: Configure Docker to use gcloud as a credential helper
       run: |
-        docker build -t gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA .
-    
-    - name: Push Docker image to Google Container Registry
+        gcloud auth configure-docker --quiet
+
+    - name: Build and Push Docker image
       run: |
-        gcloud auth configure-docker
-        docker push gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA
+        docker build -t gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:latest .
+        docker push gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:latest
 
     - name: Set up kubectl
       run: |
-        gcloud components update kubectl
+        gcloud components install kubectl --quiet
         gcloud container clusters get-credentials reelatable-cluster --zone us-west1 --project ${{ secrets.GKE_PROJECT }}
 
     - name: Deploy to Kubernetes
       run: |
-        kubectl set image deployment/flutter-reelatable flutter-reelatable=gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA
+        kubectl rollout restart deployment/flutter-reelatable
