@@ -1,3 +1,11 @@
+name: Deploy to GKE on PR
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -14,6 +22,7 @@ jobs:
     - name: Authenticate with Google Cloud
       run: |
         echo '${{ secrets.GKE_KEY }}' | gcloud auth activate-service-account --key-file=-
+        gcloud config set project ${{ secrets.GKE_PROJECT }}
 
     - name: Configure Docker to use gcloud as a credential helper
       run: gcloud auth configure-docker --quiet
@@ -23,10 +32,6 @@ jobs:
 
     - name: Get Cluster Credentials
       run: |
-        PROJECT_NUMBER="$(gcloud projects describe ${PROJECT_ID} --format='get(projectNumber)')"
-        gcloud projects add-iam-policy-binding ${PROJECT_NUMBER} \
-          --member=serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com \
-          --role=roles/container.developer
         gcloud container clusters get-credentials reelatable-cluster --region us-west1 --project ${{ secrets.GKE_PROJECT }}
 
     - name: Build and Push Docker image
@@ -37,3 +42,8 @@ jobs:
     - name: Deploy to Kubernetes
       run: |
         kubectl rollout restart deployment/flutter-reelatable
+
+    - name: Verify Deployment
+      run: |
+        kubectl get deployments
+        kubectl describe deployments/flutter-reelatable
