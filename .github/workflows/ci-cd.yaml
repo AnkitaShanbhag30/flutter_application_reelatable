@@ -21,12 +21,12 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t gcr.io/reelatable/flutter-reelatable:$GITHUB_SHA .
+        docker build -t gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA .
     
     - name: Push Docker image to Google Container Registry
       run: |
         gcloud auth configure-docker
-        docker push gcr.io/reelatable/flutter-reelatable:$GITHUB_SHA
+        docker push gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA
 
     - name: Set up kubectl
       run: |
@@ -35,4 +35,4 @@ jobs:
 
     - name: Deploy to Kubernetes
       run: |
-        kubectl set image deployment/flutter-reelatable flutter-reelatable=gcr.io/reelatable/flutter-reelatable:$GITHUB_SHA
+        kubectl set image deployment/flutter-reelatable flutter-reelatable=gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA
