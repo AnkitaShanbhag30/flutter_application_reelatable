@@ -23,6 +23,10 @@ jobs:
 
     - name: Get Cluster Credentials
       run: |
+        PROJECT_NUMBER="$(gcloud projects describe ${PROJECT_ID} --format='get(projectNumber)')"
+        gcloud projects add-iam-policy-binding ${PROJECT_NUMBER} \
+          --member=serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com \
+          --role=roles/container.developer
         gcloud container clusters get-credentials reelatable-cluster --region us-west1 --project ${{ secrets.GKE_PROJECT }}
 
     - name: Build and Push Docker image
