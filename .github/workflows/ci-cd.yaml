@@ -22,12 +22,22 @@ jobs:
     - name: Build Docker image
       run: |
         docker build -t gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA .
-    
+
+    - name: Configure Docker to use gcloud as a credential helper
+      run: gcloud auth configure-docker --quiet
+
+    - name: List Docker Config
+      run: cat ~/.docker/config.json
+
+    - name: Auth Info
+      run: gcloud auth list
+
+    - name: Print Project Info
+      run: gcloud config list project
+
     - name: Push Docker image to Google Container Registry
       run: |
-        gcloud auth login
-        gcloud auth configure-docker us-west1-docker.pkg.dev
-        gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://us-west1-docker.pkg.dev
+        echo ${{ secrets.GKE_KEY }} | docker login -u _json_key --password-stdin https://gcr.io
         docker push gcr.io/${{ secrets.GKE_PROJECT }}/flutter-reelatable:$GITHUB_SHA
 
     - name: Set up kubectl
