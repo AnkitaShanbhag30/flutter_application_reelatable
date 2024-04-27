@@ -32,14 +32,7 @@ class MainScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Welcome to Reelatable')),
-      body: Column(
-        children: const [
-          Expanded(
-            child: MyHomePage(title: 'Reelatable'),  // Using MyHomePage as a child widget
-          ),
-          // You can add more widgets here as needed
-        ],
-      ),
+      body: const MyHomePage(title: 'Reelatable'),
     );
   }
 }
@@ -60,6 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool showResonated = false; // State to toggle display of resonated data
   String _errorMessage = '';
   int _selectedTabIndex = 0; // To track the selected tab
+  int _mainTabIndex = 0;
 
    // Change to store detailed information
   Map<String, Map<String, String>> userResonatedData = {};
@@ -132,22 +126,56 @@ Widget attributeList(Map<String, dynamic> movie, String attributeKey) {
     );
   }
 
-
 @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+Widget build(BuildContext context) {
+  return DefaultTabController(
+    length: 3,
+    child: Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Padding(
+          padding: const EdgeInsets.all(100.0),
+          child: Text(widget.title),
+        ),
         centerTitle: true,
         backgroundColor: Color(0xFF070D35),
         foregroundColor: Color(0xFFF2DBAF),
+        bottom: TabBar(
+          onTap: (index) {
+            setState(() {
+              _mainTabIndex = index;
+            });
+          },
+          labelStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          indicatorColor: Colors.red,
+          labelColor: Colors.red,
+          unselectedLabelColor: Colors.grey,
+          tabs: const [
+            Tab(text: 'Home'),
+            Tab(text: 'Patterns'),
+            Tab(text: 'Recommendations'),
+          ],
+        ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 300),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
+      body: Padding(
+        padding: const EdgeInsets.only(left: 100.0, right: 100.0),
+        child: TabBarView(
+          children: [
+            homeTab(), // Your existing content
+            const Center(child: Text('Patterns content goes here')),
+            const Center(child: Text('Recommendations content goes here')),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+  Widget homeTab() {
+    return DefaultTabController(
+      length: 4,
+      child: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
             if (_errorMessage.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(8.0),
@@ -164,9 +192,12 @@ Widget attributeList(Map<String, dynamic> movie, String attributeKey) {
               ),
               onSubmitted: _sendDataToBackend,
             ),
-            ElevatedButton(
-              onPressed: () => _sendDataToBackend(),
-              child: const Text('Add'),
+            Padding(
+              padding: const EdgeInsets.all(20.0),  // Adds 20 pixels padding around the button
+              child: ElevatedButton(
+                onPressed: () => _sendDataToBackend(),
+                child: const Text('Add'),
+              ),
             ),
             Wrap(
               spacing: 20,
@@ -176,45 +207,47 @@ Widget attributeList(Map<String, dynamic> movie, String attributeKey) {
               )).toList(),
             ),
             if (selectedMovie.isNotEmpty) ...[
-              Text(selectedMovie['protagonist'] ?? 'Protagonist not found', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFF2DBAF))), // Color updated here
+              Text(selectedMovie['protagonist'] ?? 'Protagonist not found', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFF2DBAF))),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Text("Select characteristics that resonate with you", style: TextStyle(fontSize: 18, color: Color(0xFFF2DBAF))), // Color updated here
+                child: Text("Select characteristics that resonate with you", style: TextStyle(fontSize: 18, color: Color(0xFFF2DBAF))),
               ),
-              DefaultTabController(
-                length: 4,
-                child: Column(
-                  children: <Widget>[
-                    TabBar(
-                      onTap: (index) {
-                        setState(() {
-                          _selectedTabIndex = index;
-                        });
-                      },
-                      indicatorColor: Colors.red,
-                      labelColor: Colors.red,
-                      unselectedLabelColor: Colors.grey,
-                      tabs: [
-                        Tab(text: 'Flaws'),
-                        Tab(text: 'personality_traits'),
-                        Tab(text: 'Desires'),
-                        Tab(text: 'Beliefs'),
-                      ],
-                    ),
-                    Container(
-                      height: 300,
-                      child: TabBarView(
-                        children: [
-                          attributeList(selectedMovie, 'flaws'),
-                          attributeList(selectedMovie, 'personality_traits'),
-                          attributeList(selectedMovie, 'desires'),
-                          attributeList(selectedMovie, 'beliefs'),
+                DefaultTabController(
+                  length: 4,
+                  child: Column(
+                    children: <Widget>[
+                      TabBar(
+                        onTap: (index) {
+                          setState(() {
+                            _selectedTabIndex = index;
+                          });
+                        },
+                        indicatorColor: Colors.red,
+                        labelColor: Colors.red,
+                        unselectedLabelColor: Colors.grey,
+                        tabs: [
+                          Tab(text: 'Flaws'),
+                          Tab(text: 'Personality Traits'),
+                          Tab(text: 'Desires'),
+                          Tab(text: 'Beliefs'),
                         ],
                       ),
-                    ),
-                  ],
+                      Container(
+                        height: 300,
+                        child: Expanded(
+                          child: TabBarView(
+                            children: [
+                              attributeList(selectedMovie, 'flaws'),
+                              attributeList(selectedMovie, 'personality_traits'),
+                              attributeList(selectedMovie, 'desires'),
+                              attributeList(selectedMovie, 'beliefs'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               ElevatedButton(
                 onPressed: () {
                   setState(() {
@@ -224,13 +257,14 @@ Widget attributeList(Map<String, dynamic> movie, String attributeKey) {
                 child: Text('Show Resonated'),
               ),
               if (showResonated) buildResonatedList(),
-            ]
+            ],
           ],
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+
 
   @override
   void dispose() {
