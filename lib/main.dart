@@ -54,6 +54,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String _errorMessage = '';
   int _selectedTabIndex = 0; // To track the selected tab
   int _mainTabIndex = 0;
+   String _apiResponse = ''; 
 
    // Change to store detailed information
   Map<String, Map<String, String>> userResonatedData = {};
@@ -161,13 +162,49 @@ Widget build(BuildContext context) {
         child: TabBarView(
           children: [
             homeTab(), // Your existing content
-            const Center(child: Text('Patterns content goes here')),
+            
+            Center(
+              // wrap the below in SingleChildScrollView to make it scrollable
+              child:SingleChildScrollView(
+                child: Column(
+                  children: <Widget>[
+                    ElevatedButton(
+                      child: Text('Show Pattern'),
+                      onPressed: getMoviePatterns, // No need to pass movieTitles explicitly anymore
+                    ),
+                    Text(_apiResponse),
+                  ],
+                ),
+              ),
+            ),
             const Center(child: Text('Recommendations content goes here')),
           ],
         ),
       ),
     ),
   );
+}
+
+
+Map<String, dynamic> _patternData = {}; // To store the parsed pattern data
+
+Future<void> getMoviePatterns() async {
+  List<String> movieTitles = movies.map((movie) => movie['title'] as String).toList();
+  var url = Uri.parse('http://localhost:5001/patterns/get_movie_patterns');
+  var response = await http.post(
+    url,
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode({"titles": movieTitles}),
+  );
+
+  if (response.statusCode == 200) {
+    setState(() {
+      _apiResponse = response.body;
+      _patternData = json.decode(response.body); // Parsing and storing the data
+    });
+  } else {
+    print('Request failed with status: ${response.statusCode}.');
+  }
 }
 
   Widget homeTab() {
@@ -248,13 +285,16 @@ Widget build(BuildContext context) {
                     ],
                   ),
                 ),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    showResonated = !showResonated; // Toggle the display of resonated items
-                  });
-                },
-                child: Text('Show Resonated'),
+              Padding(
+                padding: const EdgeInsets.all(20.0),  // Adds 20 pixels padding around the button
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      showResonated = !showResonated; // Toggle the display of resonated items
+                    });
+                  },
+                  child: Text('Show Resonated'),
+                ),
               ),
               if (showResonated) buildResonatedList(),
             ],
@@ -263,8 +303,6 @@ Widget build(BuildContext context) {
       ),
     );
   }
-
-
 
   @override
   void dispose() {
