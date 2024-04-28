@@ -15,8 +15,8 @@ class MyApp extends StatelessWidget {
       title: 'Reelatable',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Color(0xFF070D35),
-          background: Color(0xFF070D35),
+          seedColor: const Color(0xFF070D35),
+          background: const Color(0xFF070D35),
         ),
         useMaterial3: true,
       ),
@@ -31,7 +31,7 @@ class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Welcome to Reelatable')),
+      appBar: AppBar(title: const Text('Welcome to Reelatable')),
       body: const MyHomePage(title: 'Reelatable'),
     );
   }
@@ -52,7 +52,6 @@ class _MyHomePageState extends State<MyHomePage> {
   Map<String, dynamic> selectedMovie = {};
   bool showResonated = false; // State to toggle display of resonated data
   String _errorMessage = '';
-  int _selectedTabIndex = 0; // To track the selected tab
   int _mainTabIndex = 0;
   String _apiResponse = ''; 
 
@@ -121,8 +120,8 @@ Widget attributeList(Map<String, dynamic> movie, String attributeKey) {
         String fullKey = '${movie['title']} - ${movie[traitKey]}'; // Combining movie title and trait
 
         listItems.add(CheckboxListTile(
-          title: Text(movie[traitKey], style: TextStyle(color: Color(0xFFF2DBAF))),
-          subtitle: Text(movie[evidenceKey], style: TextStyle(color: Color(0xFFF2DBAF))),
+          title: Text(movie[traitKey], style: const TextStyle(color: Color(0xFFF2DBAF))),
+          subtitle: Text(movie[evidenceKey], style: const TextStyle(color: Color(0xFFF2DBAF))),
           value: userResonatedData.containsKey(fullKey),
           // onChanged: (bool? value) {
           //   setState(() {
@@ -166,7 +165,7 @@ Widget attributeList(Map<String, dynamic> movie, String attributeKey) {
 
   Widget buildResonatedList() {
     List<Widget> items = userResonatedData.entries.map((entry) => ListTile(
-      title: Text("${entry.value['trait']} (${entry.value['movie']})", style: TextStyle(color: Color(0xFFF2DBAF))),
+      title: Text("${entry.value['trait']} (${entry.value['movie']})", style: const TextStyle(color: Color(0xFFF2DBAF))),
       subtitle: Text(entry.value['evidence']!, style: const TextStyle(color: Color(0xFFF2DBAF)))
     )).toList();
 
@@ -186,15 +185,15 @@ Widget build(BuildContext context) {
           child: Text(widget.title),
         ),
         centerTitle: true,
-        backgroundColor: Color(0xFF070D35),
-        foregroundColor: Color(0xFFF2DBAF),
+        backgroundColor: const Color(0xFF070D35),
+        foregroundColor: const Color(0xFFF2DBAF),
         bottom: TabBar(
           onTap: (index) {
             setState(() {
               _mainTabIndex = index;
             });
           },
-          labelStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          labelStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           indicatorColor: Colors.red,
           labelColor: Colors.red,
           unselectedLabelColor: Colors.grey,
@@ -215,7 +214,7 @@ Widget build(BuildContext context) {
                 child: Column(
                   children: <Widget>[
                     ElevatedButton(
-                      child: Text('Show Pattern'),
+                      child: const Text('Show Pattern'),
                       onPressed: getMoviePatterns,
                     ),
                     if (_apiResponse.isNotEmpty)
@@ -265,10 +264,10 @@ List<DataRow> _generateTableRows(Map<String, dynamic> data) {
     List<List<String>> traitsByCluster = parsedData['traitsByCluster'];
 
     rows.add(DataRow(cells: [
-      DataCell(Text(category, style: TextStyle(color: Color(0xFFF2DBAF)))),
-      DataCell(Text(clusterTraits.join(", "), style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
-      DataCell(Text(traitsByCluster[0].join(", "), style: TextStyle(color: Color(0xFFF2DBAF)))),
-      DataCell(Text(traitsByCluster.length > 1 ? traitsByCluster[1].join(", ") : "", style: TextStyle(color: Color(0xFFF2DBAF)))),
+      DataCell(Text(category, style: const TextStyle(color: Color(0xFFF2DBAF)))),
+      DataCell(Text(clusterTraits.join(", "), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
+      DataCell(Text(traitsByCluster[0].join(", "), style: const TextStyle(color: Color(0xFFF2DBAF)))),
+      DataCell(Text(traitsByCluster.length > 1 ? traitsByCluster[1].join(", ") : "", style: const TextStyle(color: Color(0xFFF2DBAF)))),
     ]));
   });
   return rows;
@@ -299,11 +298,11 @@ Widget buildDataTable() {
             if (_errorMessage.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text(_errorMessage, style: TextStyle(color: Colors.red, fontSize: 16)),
+                child: Text(_errorMessage, style: const TextStyle(color: Colors.red, fontSize: 16)),
               ),
             TextField(
               controller: _textController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 prefixIcon: Icon(Icons.search, color: Color(0xFF070D35)),
                 fillColor: Color(0xFFF2DBAF),
                 filled: true,
@@ -327,9 +326,9 @@ Widget buildDataTable() {
               )).toList(),
             ),
             if (selectedMovie.isNotEmpty) ...[
-              Text(selectedMovie['protagonist'] ?? 'Protagonist not found', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFF2DBAF))),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+              Text(selectedMovie['protagonist'] ?? 'Protagonist not found', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFF2DBAF))),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
                 child: Text("Select characteristics that resonate with you", style: TextStyle(fontSize: 18, color: Color(0xFFF2DBAF))),
               ),
                 DefaultTabController(
@@ -339,13 +338,12 @@ Widget buildDataTable() {
                       TabBar(
                         onTap: (index) {
                           setState(() {
-                            _selectedTabIndex = index;
                           });
                         },
                         indicatorColor: Colors.red,
                         labelColor: Colors.red,
                         unselectedLabelColor: Colors.grey,
-                        tabs: [
+                        tabs: const [
                           Tab(text: 'Flaws'),
                           Tab(text: 'Personality Traits'),
                           Tab(text: 'Desires'),
@@ -376,7 +374,7 @@ Widget buildDataTable() {
                       showResonated = !showResonated; // Toggle the display of resonated items
                     });
                   },
-                  child: Text('Show Resonated'),
+                  child: const Text('Show Resonated'),
                 ),
               ),
               if (showResonated) buildResonatedList(),
@@ -565,8 +563,3 @@ Widget _buildTraitBasedMoviePosters() {
     super.dispose();
   }
 }
-
-
-
-
-
