@@ -58,6 +58,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
    // Change to store detailed information
   Map<String, Map<String, String>> userResonatedData = {};
+
+  Map<String, List<String>> userResonatedDataForRecommendations = {
+    "beliefs": [],
+    "desires": [],
+    "personality_traits": [],
+    "flaws": []
+  };
+
   
   // Helper function to extract and organize data from each category
   Map<String, dynamic> _parseTraits(Map<String, dynamic> categoryData) {
@@ -116,16 +124,34 @@ Widget attributeList(Map<String, dynamic> movie, String attributeKey) {
           title: Text(movie[traitKey], style: TextStyle(color: Color(0xFFF2DBAF))),
           subtitle: Text(movie[evidenceKey], style: TextStyle(color: Color(0xFFF2DBAF))),
           value: userResonatedData.containsKey(fullKey),
+          // onChanged: (bool? value) {
+          //   setState(() {
+          //     if (value == true) {
+          //       userResonatedData[fullKey] = {
+          //         'trait': movie[traitKey],
+          //         'evidence': movie[evidenceKey],
+          //         'movie': movie['title']
+          //       };
+          //     } else {
+          //       userResonatedData.remove(fullKey);
+          //     }
+          //   });
+          // },
           onChanged: (bool? value) {
             setState(() {
+              String traitType = attributeKey; // This assumes attributeKey is one of "beliefs", "desires", etc.
               if (value == true) {
                 userResonatedData[fullKey] = {
                   'trait': movie[traitKey],
                   'evidence': movie[evidenceKey],
                   'movie': movie['title']
                 };
+                // Add to recommendations data
+                userResonatedDataForRecommendations[traitType]?.add(movie[traitKey]);
               } else {
                 userResonatedData.remove(fullKey);
+                // Remove from recommendations data
+                userResonatedDataForRecommendations[traitType]?.remove(movie[traitKey]);
               }
             });
           },
@@ -198,7 +224,8 @@ Widget build(BuildContext context) {
                 ),
               ),
             ),
-            const Center(child: Text('Recommendations content goes here')),
+            // const Center(child: Text('Recommendations content goes here')),
+            recommendationsTab(),
           ],
         ),
       ),
@@ -359,6 +386,178 @@ Widget buildDataTable() {
       ),
     );
   }
+
+  // Widget recommendationsTab() {
+  //   return SingleChildScrollView(
+  //     child: Column(
+  //       children: <Widget>[
+  //         ElevatedButton(
+  //           onPressed: _getMovieRecommendations,
+  //           child: Text('Get Movies Based on Selected Movies'),
+  //         ),
+  //         SizedBox(height: 20),
+  //         _buildMoviePosters(),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  // State to hold movie poster URLs
+  List<String> _moviePosterUrls = [];
+
+  Future<void> _getMovieRecommendations() async {
+    const url = 'http://localhost:5001/recommendations/get_movie_recommendations';
+    List<String> movieTitles = ['Inception', 'The Matrix', 'Interstellar'];  // This should be dynamically populated based on user input
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'movie_titles': movieTitles,
+          'alpha': 0.0,
+          'num_movies': 5
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
+        setState(() {
+          _moviePosterUrls = responseData
+              .map<String>((movie) => movie['poster_url'] as String)
+              .toList();
+        });
+      } else {
+        // Handle errors or non-200 responses
+        print('Failed to load recommendations');
+      }
+    } catch (e) {
+      print('Error occurred while fetching recommendations: $e');
+      // Handle exception by showing an error message or similar
+    }
+  }
+
+  Widget _buildMoviePosters() {
+    return Wrap(
+      spacing: 8.0, // Adds space between images
+      children: _moviePosterUrls.map((url) => Image.network(url, width: 100, height: 150)).toList(),
+    );
+  }
+
+  Widget recommendationsTab() {
+    return SingleChildScrollView(
+      child: Column(
+        children: <Widget>[
+          ElevatedButton(
+            onPressed: _getMovieRecommendations,
+            child: Text('Get Movies Based on Selected Movies'),
+          ),
+          SizedBox(height: 20),
+          _buildMoviePosters(),
+          SizedBox(height: 20),
+          ElevatedButton(
+            // onPressed: _getMoviesBasedOnResonatedTraits,
+            onPressed: () {
+              print(userResonatedData);
+              _getMoviesBasedOnResonatedTraits();
+            },
+            child: Text('Get Movies Based on Resonated Traits'),
+          ),
+          SizedBox(height: 20),
+          _buildTraitBasedMoviePosters(),
+        ],
+      ),
+    );
+  }
+
+  // State to hold movie poster URLs for trait-based recommendations
+List<String> _traitBasedMoviePosterUrls = [];
+
+// Future<void> _getMoviesBasedOnResonatedTraits() async {
+//   const url = 'http://localhost:5001/recommendations/search_by_traits';
+
+//   // Example traits data, this should be dynamically generated based on userResonatedData
+//   Map<String, List<String>> traits = {
+//     "beliefs": userResonatedData.entries
+//       .where((entry) => entry.key.contains('beliefs'))
+//       .map((e) => e.value['trait'])
+//       .where((item) => item != null)
+//       .toList().cast<String>(),
+//     "desires": userResonatedData.entries
+//       .where((entry) => entry.key.contains('desires'))
+//       .map((e) => e.value['trait'])
+//       .where((item) => item != null)
+//       .toList().cast<String>(),
+//     "personality_traits": userResonatedData.entries
+//       .where((entry) => entry.key.contains('personality_traits'))
+//       .map((e) => e.value['trait'])
+//       .where((item) => item != null)
+//       .toList().cast<String>(),
+//     "flaws": userResonatedData.entries
+//       .where((entry) => entry.key.contains('flaws'))
+//       .map((e) => e.value['trait'])
+//       .where((item) => item != null)
+//       .toList().cast<String>(),
+//   };
+
+//   try {
+//     final response = await http.post(
+//       Uri.parse(url),
+//       headers: {'Content-Type': 'application/json'},
+//       body: jsonEncode({"traits": traits, "num_results": 5}),
+//     );
+
+//     if (response.statusCode == 200) {
+//       final List<dynamic> responseData = json.decode(response.body);
+//       setState(() {
+//         _traitBasedMoviePosterUrls = responseData
+//             .map<String>((movie) => movie['poster_url'] as String)
+//             .toList();
+//       });
+//     } else {
+//       print('Failed to load trait-based recommendations: ${response.body}');
+//     }
+//   } catch (e) {
+//     print('Error occurred while fetching trait-based recommendations: $e');
+//   }
+// }
+
+Future<void> _getMoviesBasedOnResonatedTraits() async {
+  const url = 'http://localhost:5001/recommendations/search_by_traits';
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "traits": userResonatedDataForRecommendations, 
+        "num_results": 5
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> responseData = json.decode(response.body);
+      setState(() {
+        _traitBasedMoviePosterUrls = responseData
+            .map<String>((movie) => movie['poster_url'] as String)
+            .toList();
+      });
+    } else {
+      print('Failed to load trait-based recommendations: ${response.body}');
+    }
+  } catch (e) {
+    print('Error occurred while fetching trait-based recommendations: $e');
+  }
+}
+
+
+Widget _buildTraitBasedMoviePosters() {
+  return Wrap(
+    spacing: 8.0, // Adds space between images
+    children: _traitBasedMoviePosterUrls
+        .map((url) => Image.network(url, width: 100, height: 150))
+        .toList(),
+  );
+}
 
   @override
   void dispose() {
