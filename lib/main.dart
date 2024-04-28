@@ -54,10 +54,32 @@ class _MyHomePageState extends State<MyHomePage> {
   String _errorMessage = '';
   int _selectedTabIndex = 0; // To track the selected tab
   int _mainTabIndex = 0;
-   String _apiResponse = ''; 
+  String _apiResponse = ''; 
 
    // Change to store detailed information
   Map<String, Map<String, String>> userResonatedData = {};
+  
+  // Helper function to extract and organize data from each category
+  Map<String, dynamic> _parseTraits(Map<String, dynamic> categoryData) {
+    // Extract cluster traits
+    List<String> clusterTraits = List<String>.from(categoryData['cluster_traits']);
+
+    // Extract traits from each cluster
+    List<List<String>> traitsByCluster = categoryData['clusters']
+        .map<List<String>>((cluster) => List<String>.from(cluster['traits']))
+        .toList();
+
+    // Ensure there are at least two clusters, filling with empty lists if necessary
+    while (traitsByCluster.length < 2) {
+      traitsByCluster.add([]);
+    }
+
+    return {
+      'clusterTraits': clusterTraits,
+      'traitsByCluster': traitsByCluster,
+    };
+  }
+
 
   Future<void> _sendDataToBackend([String? movieName]) async {
     movieName ??= _textController.text;
@@ -162,17 +184,16 @@ Widget build(BuildContext context) {
         child: TabBarView(
           children: [
             homeTab(), // Your existing content
-            
             Center(
-              // wrap the below in SingleChildScrollView to make it scrollable
-              child:SingleChildScrollView(
+              child: SingleChildScrollView(
                 child: Column(
                   children: <Widget>[
                     ElevatedButton(
                       child: Text('Show Pattern'),
-                      onPressed: getMoviePatterns, // No need to pass movieTitles explicitly anymore
+                      onPressed: getMoviePatterns,
                     ),
-                    Text(_apiResponse),
+                    if (_apiResponse.isNotEmpty)
+                      buildDataTable(), // Display DataTable if data is available
                   ],
                 ),
               ),
@@ -201,11 +222,46 @@ Future<void> getMoviePatterns() async {
     setState(() {
       _apiResponse = response.body;
       _patternData = json.decode(response.body); // Parsing and storing the data
+      _generateTableRows(_patternData); // Prepare rows for DataTable
     });
   } else {
     print('Request failed with status: ${response.statusCode}.');
   }
 }
+
+// Function to generate rows for the DataTable with specific styling
+List<DataRow> _generateTableRows(Map<String, dynamic> data) {
+  List<DataRow> rows = [];
+  data.forEach((category, details) {
+    Map<String, dynamic> parsedData = _parseTraits(details);
+    List<String> clusterTraits = parsedData['clusterTraits'];
+    List<List<String>> traitsByCluster = parsedData['traitsByCluster'];
+
+    rows.add(DataRow(cells: [
+      DataCell(Text(category, style: TextStyle(color: Color(0xFFF2DBAF)))),
+      DataCell(Text(clusterTraits.join(", "), style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))),
+      DataCell(Text(traitsByCluster[0].join(", "), style: TextStyle(color: Color(0xFFF2DBAF)))),
+      DataCell(Text(traitsByCluster.length > 1 ? traitsByCluster[1].join(", ") : "", style: TextStyle(color: Color(0xFFF2DBAF)))),
+    ]));
+  });
+  return rows;
+}
+
+// Widget to build the DataTable
+Widget buildDataTable() {
+  List<DataRow> rows = _generateTableRows(_patternData);  // Ensure _patternData is your parsed JSON data
+
+  return DataTable(
+    columns: const [
+      DataColumn(label: Text('Attribute', style: TextStyle(color: Color(0xFFF2DBAF)))),
+      DataColumn(label: Text('Cluster Traits', style: TextStyle(color: Color(0xFFF2DBAF)))),
+      DataColumn(label: Text('Traits in First Cluster', style: TextStyle(color: Color(0xFFF2DBAF)))),
+      DataColumn(label: Text('Traits in Second Cluster', style: TextStyle(color: Color(0xFFF2DBAF)))),
+    ],
+    rows: rows,
+  );
+}
+
 
   Widget homeTab() {
     return DefaultTabController(
