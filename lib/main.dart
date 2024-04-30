@@ -54,6 +54,33 @@ class _MyHomePageState extends State<MyHomePage> {
   String _errorMessage = '';
   int _mainTabIndex = 0;
   String _apiResponse = ''; 
+  // final List<String> allMoviesList = [
+  //   "Up", "Moana", "Frozen", "Interstellar", "Inception", "Batman Begins", "The Matrix"
+  // ];
+  final List<String> allMoviesList = []; 
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAllMovies();
+  }
+
+  Future<void> _fetchAllMovies() async {
+    const url = 'http://localhost:5001/all_movies/get_all_movies';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        List<dynamic> responseData = json.decode(response.body);
+        setState(() {
+          allMoviesList.addAll(responseData.map<String>((movie) => movie as String));
+        });
+      } else {
+        print('Failed to load all movies: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error occurred while fetching all movies: $e');
+    }
+  }
 
    // Change to store detailed information
   Map<String, Map<String, String>> userResonatedData = {};
@@ -123,19 +150,6 @@ Widget attributeList(Map<String, dynamic> movie, String attributeKey) {
           title: Text(movie[traitKey], style: const TextStyle(color: Color(0xFFF2DBAF))),
           subtitle: Text(movie[evidenceKey], style: const TextStyle(color: Color(0xFFF2DBAF))),
           value: userResonatedData.containsKey(fullKey),
-          // onChanged: (bool? value) {
-          //   setState(() {
-          //     if (value == true) {
-          //       userResonatedData[fullKey] = {
-          //         'trait': movie[traitKey],
-          //         'evidence': movie[evidenceKey],
-          //         'movie': movie['title']
-          //       };
-          //     } else {
-          //       userResonatedData.remove(fullKey);
-          //     }
-          //   });
-          // },
           onChanged: (bool? value) {
             setState(() {
               String traitType = attributeKey; // This assumes attributeKey is one of "beliefs", "desires", etc.
@@ -288,7 +302,6 @@ Widget buildDataTable() {
   );
 }
 
-
   Widget homeTab() {
     return DefaultTabController(
       length: 4,
@@ -300,16 +313,63 @@ Widget buildDataTable() {
                 padding: const EdgeInsets.all(8.0),
                 child: Text(_errorMessage, style: const TextStyle(color: Colors.red, fontSize: 16)),
               ),
-            TextField(
-              controller: _textController,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search, color: Color(0xFF070D35)),
-                fillColor: Color(0xFFF2DBAF),
-                filled: true,
-                border: OutlineInputBorder(),
-                labelText: 'List movies that made the deepest impact on you',
-              ),
-              onSubmitted: _sendDataToBackend,
+            Autocomplete<String>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text.isEmpty) {
+                  return const Iterable<String>.empty();
+                }
+                return allMoviesList.where((String option) {
+                  return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                });
+              },
+              onSelected: (String selection) {
+                setState(() {
+                  _textController.text = selection; // Set text to the selected movie
+                  _sendDataToBackend(selection); // Optionally fetch data right after selection
+                });
+              },
+              fieldViewBuilder: (BuildContext context, TextEditingController fieldTextEditingController, FocusNode fieldFocusNode, VoidCallback onFieldSubmitted) {
+                return TextField(
+                  controller: fieldTextEditingController,
+                  focusNode: fieldFocusNode,
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.search, color: Color(0xFF070D35)),
+                    fillColor: Color(0xFFF2DBAF),
+                    filled: true,
+                    border: OutlineInputBorder(),
+                    labelText: 'List movies that made the deepest impact on you',
+                  ),
+                  onSubmitted: (String value) => onFieldSubmitted(),
+                );
+              },
+              optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected, Iterable<String> options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4.0,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width - 48, // Match the TextField width minus padding
+                        maxHeight: 200, // Limit the height to reduce screen coverage
+                      ),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: options.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final String option = options.elementAt(index);
+                          return GestureDetector(
+                            onTap: () => onSelected(option),
+                            child: ListTile(
+                              title: Text(option),
+                              tileColor: Color(0xFFAAAAAA), // Set background color here for each option
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
             Padding(
               padding: const EdgeInsets.all(20.0),  // Adds 20 pixels padding around the button
@@ -320,13 +380,36 @@ Widget buildDataTable() {
             ),
             Wrap(
               spacing: 20,
-              children: movies.map((movie) => InkWell(
-                onTap: () => setState(() => selectedMovie = movie),
-                child: Image.network(movie['poster_url'], width: 100, height: 150, fit: BoxFit.cover),
-              )).toList(),
+              children: movies.map((movie) {
+                final bool isSelected = selectedMovie == movie;
+                final double size = isSelected ? 130.0 : 100.0;  // Larger size for selected movie
+                return Stack(
+                  alignment: Alignment.topRight,
+                  children: [
+                    InkWell(
+                      onTap: () => setState(() => selectedMovie = movie),
+                      child: Image.network(movie['poster_url'], width: size, height: size * 1.5, fit: BoxFit.cover),
+                    ),
+                    Positioned(
+                      right: -10, // Move 10 pixels to the right from the default position
+                      top: -10,  // Move 10 pixels to the top from the default position
+                      child: IconButton(
+                        icon: Icon(Icons.highlight_remove, color: Colors.white, size: 24), // Increased size for boldness
+                        onPressed: () {
+                          setState(() {
+                            movies.remove(movie);
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
             ),
             if (selectedMovie.isNotEmpty) ...[
-              Text(selectedMovie['protagonist'] ?? 'Protagonist not found', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFF2DBAF))),
+              // Text(selectedMovie['protagonist'] ?? 'Protagonist not found', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFF2DBAF))),
+              SizedBox(height: 30),
+              Text('Protagonist: ' + (selectedMovie['protagonist'] ?? 'Protagonist not found'), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFF2DBAF))),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 10),
                 child: Text("Select characteristics that resonate with you", style: TextStyle(fontSize: 18, color: Color(0xFFF2DBAF))),
@@ -385,62 +468,74 @@ Widget buildDataTable() {
     );
   }
 
-  // Widget recommendationsTab() {
-  //   return SingleChildScrollView(
-  //     child: Column(
-  //       children: <Widget>[
-  //         ElevatedButton(
-  //           onPressed: _getMovieRecommendations,
-  //           child: Text('Get Movies Based on Selected Movies'),
-  //         ),
-  //         SizedBox(height: 20),
-  //         _buildMoviePosters(),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   // State to hold movie poster URLs
-  List<String> _moviePosterUrls = [];
 
-  Future<void> _getMovieRecommendations() async {
-    const url = 'http://localhost:5001/recommendations/get_movie_recommendations';
-    List<String> movieTitles = ['Inception', 'The Matrix', 'Interstellar'];  // This should be dynamically populated based on user input
+  List<Map<String, String>> _movieDetails = [];
 
-    try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'movie_titles': movieTitles,
-          'alpha': 0.0,
-          'num_movies': 5
-        }),
-      );
+Future<void> _getMovieRecommendations() async {
+  const url = 'http://localhost:5001/recommendations/get_movie_recommendations';
+  List<String> movieTitles = movies.map((movie) => movie['title'] as String).toList();
 
-      if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
-        setState(() {
-          _moviePosterUrls = responseData
-              .map<String>((movie) => movie['poster_url'] as String)
-              .toList();
-        });
-      } else {
-        // Handle errors or non-200 responses
-        print('Failed to load recommendations');
-      }
-    } catch (e) {
-      print('Error occurred while fetching recommendations: $e');
-      // Handle exception by showing an error message or similar
+  try {
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'movie_titles': movieTitles,
+        'alpha': 0.0,
+        'num_movies': 5
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> responseData = json.decode(response.body);
+      setState(() {
+        _movieDetails = responseData.map<Map<String, String>>((movie) => {
+          'poster_url': movie['poster_url'],
+          'title': movie['title'],
+          'overview': movie['overview'],
+        }).toList();
+      });
+    } else {
+      print('Failed to load recommendations');
     }
+  } catch (e) {
+    print('Error occurred while fetching recommendations: $e');
   }
+}
+
+void _showMovieDetails(String title, String overview) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Color(0xFFF2DBAF),
+        title: Text(title),
+        content: Text(overview),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Close'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
 
   Widget _buildMoviePosters() {
-    return Wrap(
-      spacing: 8.0, // Adds space between images
-      children: _moviePosterUrls.map((url) => Image.network(url, width: 100, height: 150)).toList(),
-    );
-  }
+  return Wrap(
+    spacing: 8.0, // Adds space between images
+    children: _movieDetails.map((movieDetail) => GestureDetector(
+      onTap: () => _showMovieDetails(movieDetail['title']!, movieDetail['overview']!),
+      child: Image.network(movieDetail['poster_url']!, width: 100, height: 150),
+    )).toList(),
+  );
+}
+
 
   Widget recommendationsTab() {
     return SingleChildScrollView(
@@ -456,7 +551,7 @@ Widget buildDataTable() {
           ElevatedButton(
             // onPressed: _getMoviesBasedOnResonatedTraits,
             onPressed: () {
-              print(userResonatedData);
+              // print(userResonatedData);
               _getMoviesBasedOnResonatedTraits();
             },
             child: Text('Get Movies Based on Resonated Traits'),
@@ -469,56 +564,8 @@ Widget buildDataTable() {
   }
 
   // State to hold movie poster URLs for trait-based recommendations
-List<String> _traitBasedMoviePosterUrls = [];
 
-// Future<void> _getMoviesBasedOnResonatedTraits() async {
-//   const url = 'http://localhost:5001/recommendations/search_by_traits';
-
-//   // Example traits data, this should be dynamically generated based on userResonatedData
-//   Map<String, List<String>> traits = {
-//     "beliefs": userResonatedData.entries
-//       .where((entry) => entry.key.contains('beliefs'))
-//       .map((e) => e.value['trait'])
-//       .where((item) => item != null)
-//       .toList().cast<String>(),
-//     "desires": userResonatedData.entries
-//       .where((entry) => entry.key.contains('desires'))
-//       .map((e) => e.value['trait'])
-//       .where((item) => item != null)
-//       .toList().cast<String>(),
-//     "personality_traits": userResonatedData.entries
-//       .where((entry) => entry.key.contains('personality_traits'))
-//       .map((e) => e.value['trait'])
-//       .where((item) => item != null)
-//       .toList().cast<String>(),
-//     "flaws": userResonatedData.entries
-//       .where((entry) => entry.key.contains('flaws'))
-//       .map((e) => e.value['trait'])
-//       .where((item) => item != null)
-//       .toList().cast<String>(),
-//   };
-
-//   try {
-//     final response = await http.post(
-//       Uri.parse(url),
-//       headers: {'Content-Type': 'application/json'},
-//       body: jsonEncode({"traits": traits, "num_results": 5}),
-//     );
-
-//     if (response.statusCode == 200) {
-//       final List<dynamic> responseData = json.decode(response.body);
-//       setState(() {
-//         _traitBasedMoviePosterUrls = responseData
-//             .map<String>((movie) => movie['poster_url'] as String)
-//             .toList();
-//       });
-//     } else {
-//       print('Failed to load trait-based recommendations: ${response.body}');
-//     }
-//   } catch (e) {
-//     print('Error occurred while fetching trait-based recommendations: $e');
-//   }
-// }
+List<Map<String, String>> _traitBasedMovieDetails = [];
 
 Future<void> _getMoviesBasedOnResonatedTraits() async {
   const url = 'http://localhost:5001/recommendations/search_by_traits';
@@ -535,9 +582,11 @@ Future<void> _getMoviesBasedOnResonatedTraits() async {
     if (response.statusCode == 200) {
       final List<dynamic> responseData = json.decode(response.body);
       setState(() {
-        _traitBasedMoviePosterUrls = responseData
-            .map<String>((movie) => movie['poster_url'] as String)
-            .toList();
+        _traitBasedMovieDetails = responseData.map<Map<String, String>>((movie) => {
+          'poster_url': movie['poster_url'] as String,
+          'title': movie['title'] as String,
+          'overview': movie['overview'] as String
+        }).toList();
       });
     } else {
       print('Failed to load trait-based recommendations: ${response.body}');
@@ -547,13 +596,34 @@ Future<void> _getMoviesBasedOnResonatedTraits() async {
   }
 }
 
+void _showMovieDetails2(String title, String overview) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        backgroundColor: Color(0xFFF2DBAF),
+        title: Text(title),
+        content: Text(overview),
+        actions: <Widget>[
+          TextButton(
+            child: Text('Close'),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
 
 Widget _buildTraitBasedMoviePosters() {
   return Wrap(
     spacing: 8.0, // Adds space between images
-    children: _traitBasedMoviePosterUrls
-        .map((url) => Image.network(url, width: 100, height: 150))
-        .toList(),
+    children: _traitBasedMovieDetails.map((movieDetail) => GestureDetector(
+      onTap: () => _showMovieDetails2(movieDetail['title']!, movieDetail['overview']!),
+      child: Image.network(movieDetail['poster_url']!, width: 100, height: 150),
+    )).toList(),
   );
 }
 
