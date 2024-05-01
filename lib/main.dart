@@ -66,7 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _fetchAllMovies() async {
-    const url = 'http://localhost:5001/all_movies/get_all_movies';
+    const url = 'http://34.82.187.110/all_movies/get_all_movies';
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -117,7 +117,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _sendDataToBackend([String? movieName]) async {
     movieName ??= _textController.text;
-    var url = Uri.parse('http://127.0.0.1:5001/metadata/get_movie_metadata?title=' + Uri.encodeComponent(movieName));
+    var url = Uri.parse('http://34.82.187.110/metadata/get_movie_metadata?title=${Uri.encodeComponent(movieName)}');
     try {
       var response = await http.get(url);
       if (response.statusCode == 200) {
@@ -251,7 +251,7 @@ Map<String, dynamic> _patternData = {}; // To store the parsed pattern data
 
 Future<void> getMoviePatterns() async {
   List<String> movieTitles = movies.map((movie) => movie['title'] as String).toList();
-  var url = Uri.parse('http://localhost:5001/patterns/get_movie_patterns');
+  var url = Uri.parse('http://34.82.187.110/patterns/get_movie_patterns');
   var response = await http.post(
     url,
     headers: {"Content-Type": "application/json"},
@@ -473,7 +473,7 @@ Widget buildDataTable() {
   List<Map<String, String>> _movieDetails = [];
 
 Future<void> _getMovieRecommendations() async {
-  const url = 'http://localhost:5001/recommendations/get_movie_recommendations';
+  const url = 'http://34.82.187.110/recommendations/get_movie_recommendations';
   List<String> movieTitles = movies.map((movie) => movie['title'] as String).toList();
 
   try {
@@ -568,7 +568,7 @@ void _showMovieDetails(String title, String overview) {
 List<Map<String, String>> _traitBasedMovieDetails = [];
 
 Future<void> _getMoviesBasedOnResonatedTraits() async {
-  const url = 'http://localhost:5001/recommendations/search_by_traits';
+  const url = 'http://34.82.187.110/recommendations/search_by_traits';
   try {
     final response = await http.post(
       Uri.parse(url),

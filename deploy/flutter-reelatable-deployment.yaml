@@ -12,19 +12,12 @@ spec:
       labels:
         app: flutter-reelatable
     spec:
-      # imagePullSecrets:
-      # - name: gcr-json-key
+      imagePullSecrets:
+      - name: gcr-json-key
       containers:
       - name: flutter-reelatable
-        image: gcr.io/reelatable/docker-flutter-reelatable:latest
+        image: gcr.io/reelatable-420506/docker-flutter-reelatable:202405011158
         imagePullPolicy: Always
-        resources:
-          limits:
-            cpu: "1"
-            memory: "512Mi"
-          requests:
-            cpu: "100m"
-            memory: "256Mi"
         ports:
         - containerPort: 80
 
