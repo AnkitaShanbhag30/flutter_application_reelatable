@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:lottie/lottie.dart';
 
 void main() {
   runApp(const MyApp());
@@ -53,12 +53,10 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Map<String, dynamic>> movies = [];
   Map<String, dynamic> selectedMovie = {};
   bool showResonated = false; // State to toggle display of resonated data
+  bool isLoading = true;
   String _errorMessage = '';
-  int _mainTabIndex = 0;
+  int _mainTabIndex = 0; 
   String _apiResponse = ''; 
-  // final List<String> allMoviesList = [
-  //   "Up", "Moana", "Frozen", "Interstellar", "Inception", "Batman Begins", "The Matrix"
-  // ];
   List<String> allMoviesList = []; 
 
   @override
@@ -74,8 +72,8 @@ class _MyHomePageState extends State<MyHomePage> {
     if (cachedMovies.isNotEmpty) {
       setState(() {
         allMoviesList = cachedMovies;
+        isLoading = false;  // Update loading state
       });
-      print('Loaded movies from cache');
     } else {
       await _fetchAllMovies();
     }
@@ -88,17 +86,23 @@ class _MyHomePageState extends State<MyHomePage> {
       if (response.statusCode == 200) {
         List<dynamic> responseData = json.decode(response.body);
         List<String> movies = responseData.map<String>((movie) => movie as String).toList();
-        setState(() {
-          allMoviesList.addAll(movies);
-        });
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setStringList('allMoviesList', movies);
-        print('Movies loaded from API and cached');
+        setState(() {
+          allMoviesList.addAll(movies);
+          isLoading = false;  // Update loading state
+        });
       } else {
-        print('Failed to load all movies: ${response.statusCode}');
+        setState(() {
+          _errorMessage = 'Failed to load all movies: ${response.statusCode}';
+          isLoading = false;  // Update loading state
+        });
       }
     } catch (e) {
-      print('Error occurred while fetching all movies: $e');
+      setState(() {
+        _errorMessage = 'Error occurred while fetching all movies: $e';
+        isLoading = false;  // Update loading state
+      });
     }
   }
 
@@ -236,7 +240,7 @@ Widget build(BuildContext context) {
         centerTitle: true,
         backgroundColor: const Color(0xFF070D35),
         foregroundColor: const Color(0xFFF2DBAF),
-        bottom: TabBar(
+        bottom: isLoading ? null : TabBar(
           onTap: (index) {
             setState(() {
               _mainTabIndex = index;
@@ -253,30 +257,37 @@ Widget build(BuildContext context) {
           ],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.only(left: 100.0, right: 100.0),
-        child: TabBarView(
-          children: [
-            homeTab(), // Your existing content
-            Center(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: <Widget>[
-                    ElevatedButton(
-                      onPressed: getMoviePatterns,
-                      child: const Text('Show Pattern'),
-                    ),
-                    if (_apiResponse.isNotEmpty)
-                      buildDataTable(), // Display DataTable if data is available
-                  ],
-                ),
-              ),
+      body: isLoading
+        ? Center(
+            child: SizedBox(
+              width: 200,  // Set the width of the animation
+              height: 200,  // Set the height of the animation
+              child: Image.asset('assets/animations/loading.gif'),
             ),
-            // const Center(child: Text('Recommendations content goes here')),
-            recommendationsTab(),
-          ],
-        ),
-      ),
+          )
+        : Padding(
+            padding: const EdgeInsets.only(left: 100.0, right: 100.0),
+            child: TabBarView(
+              children: [
+                homeTab(),  // Existing homeTab content
+                Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: <Widget>[
+                        ElevatedButton(
+                          onPressed: getMoviePatterns,
+                          child: const Text('Show Pattern'),
+                        ),
+                        if (_apiResponse.isNotEmpty)
+                          buildDataTable(),  // Display DataTable if data is available
+                      ],
+                    ),
+                  ),
+                ),
+                recommendationsTab(),  // Existing recommendationsTab content
+              ],
+            ),
+          ),
     ),
   );
 }
