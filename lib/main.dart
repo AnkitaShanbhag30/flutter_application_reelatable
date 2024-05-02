@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -57,12 +59,26 @@ class _MyHomePageState extends State<MyHomePage> {
   // final List<String> allMoviesList = [
   //   "Up", "Moana", "Frozen", "Interstellar", "Inception", "Batman Begins", "The Matrix"
   // ];
-  final List<String> allMoviesList = []; 
+  List<String> allMoviesList = []; 
 
   @override
   void initState() {
     super.initState();
-    _fetchAllMovies();
+    _loadMovies();
+  }
+
+  Future<void> _loadMovies() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> cachedMovies = prefs.getStringList('allMoviesList') ?? [];
+
+    if (cachedMovies.isNotEmpty) {
+      setState(() {
+        allMoviesList = cachedMovies;
+      });
+      print('Loaded movies from cache');
+    } else {
+      await _fetchAllMovies();
+    }
   }
 
   Future<void> _fetchAllMovies() async {
@@ -71,9 +87,13 @@ class _MyHomePageState extends State<MyHomePage> {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         List<dynamic> responseData = json.decode(response.body);
+        List<String> movies = responseData.map<String>((movie) => movie as String).toList();
         setState(() {
-          allMoviesList.addAll(responseData.map<String>((movie) => movie as String));
+          allMoviesList.addAll(movies);
         });
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList('allMoviesList', movies);
+        print('Movies loaded from API and cached');
       } else {
         print('Failed to load all movies: ${response.statusCode}');
       }
