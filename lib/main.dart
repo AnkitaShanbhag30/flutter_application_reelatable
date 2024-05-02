@@ -408,13 +408,6 @@ Widget homeTab() {
               );
             },
           ),
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: ElevatedButton(
-              onPressed: () => _sendDataToBackend(),
-              child: const Text('Add'),
-            ),
-          ),
           Wrap(
             spacing: 20,
             children: movies.map((movie) {
@@ -474,7 +467,7 @@ Widget homeTab() {
                     ],
                   ),
                   SizedBox(
-                    height: 300,  // Sets the height of the container for the TabBarView
+                    height: 300,  
                     child: TabBarView(
                       children: [
                         attributeList(selectedMovie, 'flaws'),
