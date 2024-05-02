@@ -319,7 +319,6 @@ Widget buildDataTable() {
 
 Widget homeTab() {
   print("Building home tab..."); // Log when home tab is being built
-
   return DefaultTabController(
     length: 4,
     child: SingleChildScrollView(
@@ -454,7 +453,8 @@ Widget homeTab() {
                       Tab(text: 'Beliefs'),
                     ],
                   ),
-                  Expanded(
+                  SizedBox(
+                    height: 300,  // Sets the height of the container for the TabBarView
                     child: TabBarView(
                       children: [
                         attributeList(selectedMovie, 'flaws'),
