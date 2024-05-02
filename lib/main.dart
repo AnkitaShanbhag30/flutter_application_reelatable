@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MainScreen extends StatelessWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -138,40 +138,55 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-Widget attributeList(Map<String, dynamic> movie, String attributeKey) {
+  Widget attributeList(Map<String, dynamic> movie, String attributeKey) {
     List<Widget> listItems = [];
-    for (int i = 1; i <= 5; i++) {
-      var traitKey = '${attributeKey}_${i}_trait';
-      var evidenceKey = '${attributeKey}_${i}_evidence';
-      if (movie.containsKey(traitKey) && movie.containsKey(evidenceKey)) {
-        String fullKey = '${movie['title']} - ${movie[traitKey]}'; // Combining movie title and trait
 
-        listItems.add(CheckboxListTile(
-          title: Text(movie[traitKey], style: const TextStyle(color: Color(0xFFF2DBAF))),
-          subtitle: Text(movie[evidenceKey], style: const TextStyle(color: Color(0xFFF2DBAF))),
-          value: userResonatedData.containsKey(fullKey),
-          onChanged: (bool? value) {
-            setState(() {
-              String traitType = attributeKey; // This assumes attributeKey is one of "beliefs", "desires", etc.
-              if (value == true) {
-                userResonatedData[fullKey] = {
-                  'trait': movie[traitKey],
-                  'evidence': movie[evidenceKey],
-                  'movie': movie['title']
-                };
-                // Add to recommendations data
-                userResonatedDataForRecommendations[traitType]?.add(movie[traitKey]);
-              } else {
-                userResonatedData.remove(fullKey);
-                // Remove from recommendations data
-                userResonatedDataForRecommendations[traitType]?.remove(movie[traitKey]);
-              }
-            });
-          },
-          activeColor: Colors.red,
-        ));
+    try {
+      for (int i = 1; i <= 5; i++) {
+        var traitKey = '${attributeKey}_${i}_trait';
+        var evidenceKey = '${attributeKey}_${i}_evidence';
+        print(i);
+        print(movie['title']);
+        print('\n');
+        // Ensure the movie map contains the keys before accessing them
+        if (movie.containsKey(traitKey) && movie.containsKey(evidenceKey)) {
+          String fullKey = '${movie['title']} - ${movie[traitKey]}';
+          listItems.add(CheckboxListTile(
+            title: Text(movie[traitKey], style: const TextStyle(color: Color(0xFFF2DBAF))),
+            subtitle: Text(movie[evidenceKey], style: const TextStyle(color: Color(0xFFF2DBAF))),
+            value: userResonatedData.containsKey(fullKey),
+            onChanged: (bool? value) {
+              setState(() {
+                if (value == true) {
+                  userResonatedData[fullKey] = {
+                    'trait': movie[traitKey],
+                    'evidence': movie[evidenceKey],
+                    'movie': movie['title']
+                  };
+                  // Optionally add to recommendations data
+                  userResonatedDataForRecommendations[attributeKey]?.add(movie[traitKey]);
+                } else {
+                  userResonatedData.remove(fullKey);
+                  // Optionally remove from recommendations data
+                  userResonatedDataForRecommendations[attributeKey]?.remove(movie[traitKey]);
+                }
+              });
+            },
+            activeColor: Colors.red,
+          ));
+        }
       }
+      print('try finished');
+      print(movie['title']);
+      print('\n');
+    } catch (e) {
+      print('Error building attribute list for $attributeKey: $e');
+      // Display an error message or an error widget
+      listItems.add(Center(
+        child: Text('Failed to load data for $attributeKey.', style: const TextStyle(color: Colors.red)),
+      ));
     }
+
     return SingleChildScrollView(
       child: Column(children: listItems),
     );
@@ -228,8 +243,8 @@ Widget build(BuildContext context) {
                 child: Column(
                   children: <Widget>[
                     ElevatedButton(
-                      child: const Text('Show Pattern'),
                       onPressed: getMoviePatterns,
+                      child: const Text('Show Pattern'),
                     ),
                     if (_apiResponse.isNotEmpty)
                       buildDataTable(), // Display DataTable if data is available
@@ -302,171 +317,175 @@ Widget buildDataTable() {
   );
 }
 
-  Widget homeTab() {
-    return DefaultTabController(
-      length: 4,
-      child: SingleChildScrollView(
-        child: Column(
-          children: <Widget>[
-            if (_errorMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(_errorMessage, style: const TextStyle(color: Colors.red, fontSize: 16)),
-              ),
-            Autocomplete<String>(
-              optionsBuilder: (TextEditingValue textEditingValue) {
-                if (textEditingValue.text.isEmpty) {
-                  return const Iterable<String>.empty();
-                }
-                return allMoviesList.where((String option) {
-                  return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
-                });
-              },
-              onSelected: (String selection) {
-                setState(() {
-                  _textController.text = selection; // Set text to the selected movie
-                  _sendDataToBackend(selection); // Optionally fetch data right after selection
-                });
-              },
-              fieldViewBuilder: (BuildContext context, TextEditingController fieldTextEditingController, FocusNode fieldFocusNode, VoidCallback onFieldSubmitted) {
-                return TextField(
-                  controller: fieldTextEditingController,
-                  focusNode: fieldFocusNode,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search, color: Color(0xFF070D35)),
-                    fillColor: Color(0xFFF2DBAF),
-                    filled: true,
-                    border: OutlineInputBorder(),
-                    labelText: 'List movies that made the deepest impact on you',
-                  ),
-                  onSubmitted: (String value) => onFieldSubmitted(),
-                );
-              },
-              optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected, Iterable<String> options) {
-                return Align(
-                  alignment: Alignment.topLeft,
-                  child: Material(
-                    elevation: 4.0,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width - 48, // Match the TextField width minus padding
-                        maxHeight: 200, // Limit the height to reduce screen coverage
-                      ),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: options.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          final String option = options.elementAt(index);
-                          return GestureDetector(
-                            onTap: () => onSelected(option),
-                            child: ListTile(
-                              title: Text(option),
-                              tileColor: Color(0xFFAAAAAA), // Set background color here for each option
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+Widget homeTab() {
+  print("Building home tab..."); // Log when home tab is being built
+
+  return DefaultTabController(
+    length: 4,
+    child: SingleChildScrollView(
+      child: Column(
+        children: <Widget>[
+          if (_errorMessage.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.all(20.0),  // Adds 20 pixels padding around the button
-              child: ElevatedButton(
-                onPressed: () => _sendDataToBackend(),
-                child: const Text('Add'),
-              ),
+              padding: const EdgeInsets.all(8.0),
+              child: Text(_errorMessage, style: const TextStyle(color: Colors.red, fontSize: 16)),
             ),
-            Wrap(
-              spacing: 20,
-              children: movies.map((movie) {
-                final bool isSelected = selectedMovie == movie;
-                final double size = isSelected ? 130.0 : 100.0;  // Larger size for selected movie
-                return Stack(
-                  alignment: Alignment.topRight,
-                  children: [
-                    InkWell(
-                      onTap: () => setState(() => selectedMovie = movie),
-                      child: Image.network(movie['poster_url'], width: size, height: size * 1.5, fit: BoxFit.cover),
+          Autocomplete<String>(
+            optionsBuilder: (TextEditingValue textEditingValue) {
+              if (textEditingValue.text.isEmpty) {
+                return const Iterable<String>.empty();
+              }
+              return allMoviesList.where((String option) {
+                return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+              });
+            },
+            onSelected: (String selection) {
+              print("Movie selected: $selection"); // Log the movie selected
+              setState(() {
+                _textController.text = selection; // Set text to the selected movie
+                _sendDataToBackend(selection); // Optionally fetch data right after selection
+              });
+            },
+            fieldViewBuilder: (BuildContext context, TextEditingController fieldTextEditingController, FocusNode fieldFocusNode, VoidCallback onFieldSubmitted) {
+              return TextField(
+                controller: fieldTextEditingController,
+                focusNode: fieldFocusNode,
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search, color: Color(0xFF070D35)),
+                  fillColor: Color(0xFFF2DBAF),
+                  filled: true,
+                  border: OutlineInputBorder(),
+                  labelText: 'List movies that made the deepest impact on you',
+                ),
+                onSubmitted: (String value) => onFieldSubmitted(),
+              );
+            },
+            optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected, Iterable<String> options) {
+              return Align(
+                alignment: Alignment.topLeft,
+                child: Material(
+                  elevation: 4.0,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width - 48,
+                      maxHeight: 200,
                     ),
-                    Positioned(
-                      right: -10, // Move 10 pixels to the right from the default position
-                      top: -10,  // Move 10 pixels to the top from the default position
-                      child: IconButton(
-                        icon: Icon(Icons.highlight_remove, color: Colors.white, size: 24), // Increased size for boldness
-                        onPressed: () {
-                          setState(() {
-                            movies.remove(movie);
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ),
-            if (selectedMovie.isNotEmpty) ...[
-              // Text(selectedMovie['protagonist'] ?? 'Protagonist not found', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFF2DBAF))),
-              SizedBox(height: 30),
-              Text('Protagonist: ' + (selectedMovie['protagonist'] ?? 'Protagonist not found'), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFF2DBAF))),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Text("Select characteristics that resonate with you", style: TextStyle(fontSize: 18, color: Color(0xFFF2DBAF))),
-              ),
-                DefaultTabController(
-                  length: 4,
-                  child: Column(
-                    children: <Widget>[
-                      TabBar(
-                        onTap: (index) {
-                          setState(() {
-                          });
-                        },
-                        indicatorColor: Colors.red,
-                        labelColor: Colors.red,
-                        unselectedLabelColor: Colors.grey,
-                        tabs: const [
-                          Tab(text: 'Flaws'),
-                          Tab(text: 'Personality Traits'),
-                          Tab(text: 'Desires'),
-                          Tab(text: 'Beliefs'),
-                        ],
-                      ),
-                      Container(
-                        height: 300,
-                        child: Expanded(
-                          child: TabBarView(
-                            children: [
-                              attributeList(selectedMovie, 'flaws'),
-                              attributeList(selectedMovie, 'personality_traits'),
-                              attributeList(selectedMovie, 'desires'),
-                              attributeList(selectedMovie, 'beliefs'),
-                            ],
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        final String option = options.elementAt(index);
+                        return GestureDetector(
+                          onTap: () => onSelected(option),
+                          child: ListTile(
+                            title: Text(option),
+                            tileColor: const Color(0xFFAAAAAA),
                           ),
-                        ),
-                      ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: ElevatedButton(
+              onPressed: () => _sendDataToBackend(),
+              child: const Text('Add'),
+            ),
+          ),
+          Wrap(
+            spacing: 20,
+            children: movies.map((movie) {
+              final bool isSelected = selectedMovie == movie;
+              final double size = isSelected ? 130.0 : 100.0;
+              return Stack(
+                alignment: Alignment.topRight,
+                children: [
+                  InkWell(
+                    onTap: () => setState(() {
+                      print("Movie tapped: ${movie['title']}"); // Log which movie was tapped
+                      selectedMovie = movie;
+                    }),
+                    child: Image.network(movie['poster_url'], width: size, height: size * 1.5, fit: BoxFit.cover),
+                  ),
+                  Positioned(
+                    right: -10,
+                    top: -10,
+                    child: IconButton(
+                      icon: const Icon(Icons.highlight_remove, color: Colors.white, size: 24),
+                      onPressed: () {
+                        setState(() {
+                          print("Removing movie: ${movie['title']}"); // Log movie removal
+                          movies.remove(movie);
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+          if (selectedMovie.isNotEmpty) ...[
+            const SizedBox(height: 30),
+            Text('Protagonist: ' + (selectedMovie['protagonist'] ?? 'Protagonist not found'), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFFF2DBAF))),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Text("Select characteristics that resonate with you", style: TextStyle(fontSize: 18, color: Color(0xFFF2DBAF))),
+            ),
+            DefaultTabController(
+              length: 4,
+              child: Column(
+                children: <Widget>[
+                  TabBar(
+                    onTap: (index) {
+                      print("Tab selected: $index"); // Log tab selection
+                      setState(() {});
+                    },
+                    indicatorColor: Colors.red,
+                    labelColor: Colors.red,
+                    unselectedLabelColor: Colors.grey,
+                    tabs: const [
+                      Tab(text: 'Flaws'),
+                      Tab(text: 'Personality Traits'),
+                      Tab(text: 'Desires'),
+                      Tab(text: 'Beliefs'),
                     ],
                   ),
-                ),
-              Padding(
-                padding: const EdgeInsets.all(20.0),  // Adds 20 pixels padding around the button
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      showResonated = !showResonated; // Toggle the display of resonated items
-                    });
-                  },
-                  child: const Text('Show Resonated'),
-                ),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        attributeList(selectedMovie, 'flaws'),
+                        attributeList(selectedMovie, 'personality_traits'),
+                        attributeList(selectedMovie, 'desires'),
+                        attributeList(selectedMovie, 'beliefs'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              if (showResonated) buildResonatedList(),
-            ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    print("Toggling resonated list visibility"); // Log toggle action
+                    showResonated = !showResonated;
+                  });
+                },
+                child: const Text('Show Resonated'),
+              ),
+            ),
+            if (showResonated) buildResonatedList(),
           ],
-        ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // State to hold movie poster URLs
 
@@ -509,12 +528,12 @@ void _showMovieDetails(String title, String overview) {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        backgroundColor: Color(0xFFF2DBAF),
+        backgroundColor: const Color(0xFFF2DBAF),
         title: Text(title),
         content: Text(overview),
         actions: <Widget>[
           TextButton(
-            child: Text('Close'),
+            child: const Text('Close'),
             onPressed: () {
               Navigator.of(context).pop();
             },
@@ -543,20 +562,20 @@ void _showMovieDetails(String title, String overview) {
         children: <Widget>[
           ElevatedButton(
             onPressed: _getMovieRecommendations,
-            child: Text('Get Movies Based on Selected Movies'),
+            child: const Text('Get Movies Based on Selected Movies'),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           _buildMoviePosters(),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           ElevatedButton(
             // onPressed: _getMoviesBasedOnResonatedTraits,
             onPressed: () {
               // print(userResonatedData);
               _getMoviesBasedOnResonatedTraits();
             },
-            child: Text('Get Movies Based on Resonated Traits'),
+            child: const Text('Get Movies Based on Resonated Traits'),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           _buildTraitBasedMoviePosters(),
         ],
       ),
@@ -601,12 +620,12 @@ void _showMovieDetails2(String title, String overview) {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        backgroundColor: Color(0xFFF2DBAF),
+        backgroundColor: const Color(0xFFF2DBAF),
         title: Text(title),
         content: Text(overview),
         actions: <Widget>[
           TextButton(
-            child: Text('Close'),
+            child: const Text('Close'),
             onPressed: () {
               Navigator.of(context).pop();
             },

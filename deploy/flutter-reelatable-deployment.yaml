@@ -16,7 +16,7 @@ spec:
       - name: gcr-json-key
       containers:
       - name: flutter-reelatable
-        image: gcr.io/reelatable-420506/docker-flutter-reelatable:202405011158
+        image: gcr.io/reelatable-420506/docker-flutter-reelatable:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
