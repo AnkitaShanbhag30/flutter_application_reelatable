@@ -252,8 +252,8 @@ Widget build(BuildContext context) {
           unselectedLabelColor: Colors.grey,
           tabs: const [
             Tab(text: 'Home'),
-            Tab(text: 'Patterns'),
             Tab(text: 'Recommendations'),
+            Tab(text: 'Patterns'),
           ],
         ),
       ),
@@ -270,13 +270,14 @@ Widget build(BuildContext context) {
             child: TabBarView(
               children: [
                 homeTab(),  // Existing homeTab content
+                recommendationsTab(),  // Existing recommendationsTab content
                 Center(
                   child: SingleChildScrollView(
                     child: Column(
                       children: <Widget>[
                         ElevatedButton(
                           onPressed: getMoviePatterns,
-                          child: const Text('Show Pattern'),
+                          child: const Text('Show Patterns in Selected Traits'),
                         ),
                         if (_apiResponse.isNotEmpty)
                           buildDataTable(),  // Display DataTable if data is available
@@ -284,7 +285,6 @@ Widget build(BuildContext context) {
                     ),
                   ),
                 ),
-                recommendationsTab(),  // Existing recommendationsTab content
               ],
             ),
           ),
@@ -525,7 +525,7 @@ Future<void> _getMovieRecommendations() async {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'movie_titles': movieTitles,
-        'alpha': 1.0,
+        'alpha': 0.5,
         'num_movies': 5
       }),
     );
@@ -581,27 +581,27 @@ void _showMovieDetails(String title, String overview) {
 
 
   Widget recommendationsTab() {
-    return SingleChildScrollView(
-      child: Column(
-        children: <Widget>[
-          ElevatedButton(
-            onPressed: _getMovieRecommendations,
-            child: const Text('Get Movies Based on Selected Movies'),
-          ),
-          const SizedBox(height: 20),
-          _buildMoviePosters(),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            // onPressed: _getMoviesBasedOnResonatedTraits,
-            onPressed: () {
-              // print(userResonatedData);
-              _getMoviesBasedOnResonatedTraits();
-            },
-            child: const Text('Get Movies Based on Resonated Traits'),
-          ),
-          const SizedBox(height: 20),
-          _buildTraitBasedMoviePosters(),
-        ],
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: _getMovieRecommendations,
+              child: const Text('Get Movies based on Selected Movies and Resonated Traits'),
+            ),
+            const SizedBox(height: 20),
+            _buildMoviePosters(),
+            // const SizedBox(height: 20),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     _getMoviesBasedOnResonatedTraits();
+            //   },
+            //   child: const Text('Get Movies Based on Resonated Traits'),
+            // ),
+            // const SizedBox(height: 20),
+            // _buildTraitBasedMoviePosters(),
+          ],
+        ),
       ),
     );
   }
