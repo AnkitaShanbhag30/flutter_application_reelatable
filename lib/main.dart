@@ -271,20 +271,7 @@ Widget build(BuildContext context) {
               children: [
                 homeTab(),  // Existing homeTab content
                 recommendationsTab(),  // Existing recommendationsTab content
-                Center(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: <Widget>[
-                        ElevatedButton(
-                          onPressed: getMoviePatterns,
-                          child: const Text('Show Patterns in Selected Traits'),
-                        ),
-                        if (_apiResponse.isNotEmpty)
-                          buildDataTable(),  // Display DataTable if data is available
-                      ],
-                    ),
-                  ),
-                ),
+                patternsTab(),  // New patternsTab content
               ],
             ),
           ),
@@ -580,32 +567,99 @@ void _showMovieDetails(String title, String overview) {
 }
 
 
+  bool _isLoading = false;
+
   Widget recommendationsTab() {
     return Center(
       child: SingleChildScrollView(
         child: Column(
           children: <Widget>[
             ElevatedButton(
-              onPressed: _getMovieRecommendations,
+              onPressed: () {
+                setState(() {
+                  _isLoading = true;
+                });
+                _getMovieRecommendations().then((_) {
+                  setState(() {
+                    _isLoading = false;
+                  });
+                });
+              },
               child: const Text('Get Movies based on Selected Movies and Resonated Traits'),
             ),
             const SizedBox(height: 20),
-            _buildMoviePosters(),
-            // const SizedBox(height: 20),
-            // ElevatedButton(
-            //   onPressed: () {
-            //     _getMoviesBasedOnResonatedTraits();
-            //   },
-            //   child: const Text('Get Movies Based on Resonated Traits'),
-            // ),
-            // const SizedBox(height: 20),
-            // _buildTraitBasedMoviePosters(),
+            _isLoading
+                ? Image.asset('assets/animations/loading.gif')
+                : Visibility(
+                    visible: !_isLoading,
+                    child: _buildMoviePosters(),
+                  ),
           ],
         ),
       ),
     );
   }
 
+  Widget patternsTab() {
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _isLoading = true;
+                });
+                getMoviePatterns().then((_) {
+                  setState(() {
+                    _isLoading = false;
+                  });
+                });
+              },
+              child: const Text('Show Patterns in Selected Traits'),
+            ),
+            const SizedBox(height: 20),
+            _isLoading
+                ? Image.asset('assets/animations/loading.gif')
+                : Visibility(
+                    visible: !_isLoading,
+                    child: buildDataTable(),
+                  ),
+            // if (_apiResponse.isNotEmpty)
+            //   buildDataTable(),  // Display DataTable if data is available
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Widget patternsTab() {
+  //   return  Center(
+  //     child: SingleChildScrollView(
+  //       child: Column(
+  //         children: <Widget>[
+  //           ElevatedButton(
+  //             onPressed: () {
+  //               setState(() {
+  //                 isLoading = true; // Set isLoading to true when button is clicked
+  //               });
+  //               getMoviePatterns();
+  //             },
+  //             child: const Text('Show Patterns in Selected Traits'),
+  //           ),
+  //           if (isLoading)
+  //             SizedBox(
+  //               width: 200,  // Set the width of the animation
+  //               height: 200,  // Set the height of the animation
+  //               child: Image.asset('assets/animations/loading.gif'),
+  //             ),
+  //           if (_apiResponse.isNotEmpty)
+  //             buildDataTable(),  // Display DataTable if data is available
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
   // State to hold movie poster URLs for trait-based recommendations
 
 List<Map<String, String>> _traitBasedMovieDetails = [];
