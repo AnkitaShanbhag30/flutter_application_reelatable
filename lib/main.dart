@@ -150,7 +150,7 @@ class _MyHomePageState extends State<MyHomePage> {
         setState(() {
           movies.add(data);
           _errorMessage = '';
-          _addAllTraitsToUserResonatedData(data);
+          // _addAllTraitsToUserResonatedData(data);
         });
       } else {
         setState(() {
@@ -484,15 +484,23 @@ Widget homeTab() {
                       },
                     ),
                   ),
-                  Positioned(
-                    left: 0,
-                    bottom: 0,
-                    child: TextButton(
-                      onPressed: () => _addAllTraitsToUserResonatedData(movie),
-                      style: TextButton.styleFrom(backgroundColor: Colors.red),
-                      child: const Text('Add Traits', style: TextStyle(color: Colors.white)),
-                    )
-                  )
+                  if (isSelected)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _addAllTraitsToUserResonatedData(movie);
+                            });
+                          },
+                          style: TextButton.styleFrom(backgroundColor: Colors.red),
+                          child: const Text('Add All Traits', style: TextStyle(color: Colors.white)),
+                        ),
+                      ),
+                    ),
                 ],
               );
             }).toList(),
@@ -657,6 +665,8 @@ void _showMovieDetails(String title, String overview) {
 List<Map<String, String>> _traitBasedMovieDetails = [];
 
 Future<void> _getMoviesBasedOnResonatedTraits() async {
+  print('User Resonated Data For Recommendations: $userResonatedDataForRecommendations');
+  print('User Resonated Data: $userResonatedData');
   const url = 'http://34.82.187.110/recommendations/search_by_traits';
   try {
     final response = await http.post(
