@@ -217,7 +217,6 @@ class _MyHomePageState extends State<MyHomePage> {
             value: userResonatedData.containsKey(fullKey),
             onChanged: (bool? value) {
               setState(() {
-                String fullKey = '${movie['title']} - ${movie[traitKey]}';
                 if (value == true) {
                   userResonatedData[fullKey] = {
                     'trait': movie[traitKey],
