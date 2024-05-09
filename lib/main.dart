@@ -148,6 +148,8 @@ class _MyHomePageState extends State<MyHomePage> {
         setState(() {
           movies.add(data);
           _errorMessage = '';
+          // Automatically add all traits to userResonatedData
+          _addAllTraitsToUserResonatedData(data);
         });
       } else {
         setState(() {
@@ -158,6 +160,41 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         _errorMessage = 'Error sending data to backend: $e';
       });
+    }
+  }
+
+  void _addAllTraitsToUserResonatedData(Map<String, dynamic> movieData) {
+    List<String> attributeKeys = ['flaws', 'personality_traits', 'desires', 'beliefs'];
+    for (var attributeKey in attributeKeys) {
+      for (int i = 1; i <= 5; i++) {
+        var traitKey = '${attributeKey}_${i}_trait';
+        var evidenceKey = '${attributeKey}_${i}_evidence';
+        if (movieData.containsKey(traitKey) && movieData.containsKey(evidenceKey)) {
+          String fullKey = '${movieData['title']} - ${movieData[traitKey]}';
+          userResonatedData[fullKey] = {
+            'trait': movieData[traitKey],
+            'evidence': movieData[evidenceKey],
+            'movie': movieData['title']
+          };
+        }
+      }
+    }
+  }
+
+  void _removeAllTraitsFromUserResonatedData(Map<String, dynamic> movie) {
+    String title = movie['title'];
+    List<String> attributeKeys = ['flaws', 'personality_traits', 'desires', 'beliefs'];
+    for (var attributeKey in attributeKeys) {
+      for (int i = 1; i <= 5; i++) {
+        var traitKey = '${attributeKey}_${i}_trait';
+        var evidenceKey = '${attributeKey}_${i}_evidence';
+        if (movie.containsKey(traitKey) && movie.containsKey(evidenceKey)) {
+          String fullKey = '$title - ${movie[traitKey]}';
+          userResonatedData.remove(fullKey);
+          // Also remove from userResonatedDataForRecommendations
+          userResonatedDataForRecommendations[attributeKey]?.remove(movie[traitKey]);
+        }
+      }
     }
   }
 
@@ -174,34 +211,21 @@ class _MyHomePageState extends State<MyHomePage> {
         // Ensure the movie map contains the keys before accessing them
         if (movie.containsKey(traitKey) && movie.containsKey(evidenceKey)) {
           String fullKey = '${movie['title']} - ${movie[traitKey]}';
-
-          // Initialize the item as checked by default only if it's not already in the map
-          if (!userResonatedData.containsKey(fullKey)) {
-            userResonatedData[fullKey] = {
-              'trait': movie[traitKey],
-              'evidence': movie[evidenceKey],
-              'movie': movie['title']
-            };
-            // Optionally add to recommendations data
-            userResonatedDataForRecommendations[attributeKey]?.add(movie[traitKey]);
-          }
-
           listItems.add(CheckboxListTile(
             title: Text(movie[traitKey], style: const TextStyle(color: Color(0xFFF2DBAF))),
             subtitle: Text(movie[evidenceKey], style: const TextStyle(color: Color(0xFFF2DBAF))),
             value: userResonatedData.containsKey(fullKey),
             onChanged: (bool? value) {
               setState(() {
+                String fullKey = '${movie['title']} - ${movie[traitKey]}';
                 if (value == true) {
-                  if (!userResonatedData.containsKey(fullKey)) { // Check if not already added
-                    userResonatedData[fullKey] = {
-                      'trait': movie[traitKey],
-                      'evidence': movie[evidenceKey],
-                      'movie': movie['title']
-                    };
-                    // Optionally add to recommendations data
-                    userResonatedDataForRecommendations[attributeKey]?.add(movie[traitKey]);
-                  }
+                  userResonatedData[fullKey] = {
+                    'trait': movie[traitKey],
+                    'evidence': movie[evidenceKey],
+                    'movie': movie['title']
+                  };
+                  // Optionally add to recommendations data
+                  userResonatedDataForRecommendations[attributeKey]?.add(movie[traitKey]);
                 } else {
                   userResonatedData.remove(fullKey);
                   // Optionally remove from recommendations data
@@ -456,6 +480,7 @@ Widget homeTab() {
                         setState(() {
                           print("Removing movie: ${movie['title']}"); // Log movie removal
                           movies.remove(movie);
+                          _removeAllTraitsFromUserResonatedData(movie);
                         });
                       },
                     ),
