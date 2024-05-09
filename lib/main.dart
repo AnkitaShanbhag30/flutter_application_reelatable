@@ -289,8 +289,8 @@ Widget build(BuildContext context) {
           unselectedLabelColor: Colors.grey,
           tabs: const [
             Tab(text: 'Home'),
-            Tab(text: 'Patterns'),
             Tab(text: 'Recommendations'),
+            Tab(text: 'Patterns'),
           ],
         ),
       ),
@@ -307,21 +307,8 @@ Widget build(BuildContext context) {
             child: TabBarView(
               children: [
                 homeTab(),  // Existing homeTab content
-                Center(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: <Widget>[
-                        ElevatedButton(
-                          onPressed: getMoviePatterns,
-                          child: const Text('Show Pattern'),
-                        ),
-                        if (_apiResponse.isNotEmpty)
-                          buildDataTable(),  // Display DataTable if data is available
-                      ],
-                    ),
-                  ),
-                ),
                 recommendationsTab(),  // Existing recommendationsTab content
+                patternsTab(),  // New patternsTab content
               ],
             ),
           ),
@@ -571,7 +558,7 @@ Future<void> _getMovieRecommendations() async {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'movie_titles': movieTitles,
-        'alpha': 1.0,
+        'alpha': 0.5,
         'num_movies': 5
       }),
     );
@@ -626,33 +613,71 @@ void _showMovieDetails(String title, String overview) {
 }
 
 
+  bool _isLoading = false;
+
   Widget recommendationsTab() {
-    return SingleChildScrollView(
-      child: Column(
-        children: <Widget>[
-          ElevatedButton(
-            onPressed: _getMovieRecommendations,
-            child: const Text('Get Movies Based on Selected Movies'),
-          ),
-          const SizedBox(height: 20),
-          _buildMoviePosters(),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            // onPressed: _getMoviesBasedOnResonatedTraits,
-            onPressed: () {
-              // print(userResonatedData);
-              _getMoviesBasedOnResonatedTraits();
-            },
-            child: const Text('Get Movies Based on Resonated Traits'),
-          ),
-          const SizedBox(height: 20),
-          _buildTraitBasedMoviePosters(),
-        ],
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _isLoading = true;
+                });
+                _getMovieRecommendations().then((_) {
+                  setState(() {
+                    _isLoading = false;
+                  });
+                });
+              },
+              child: const Text('Get Movies based on Selected Movies and Resonated Traits'),
+            ),
+            const SizedBox(height: 20),
+            _isLoading
+                ? Image.asset('assets/animations/loading.gif')
+                : Visibility(
+                    visible: !_isLoading,
+                    child: _buildMoviePosters(),
+                  ),
+          ],
+        ),
       ),
     );
   }
 
-  // State to hold movie poster URLs for trait-based recommendations
+  Widget patternsTab() {
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _isLoading = true;
+                });
+                getMoviePatterns().then((_) {
+                  setState(() {
+                    _isLoading = false;
+                  });
+                });
+              },
+              child: const Text('Show Patterns in Selected Traits'),
+            ),
+            const SizedBox(height: 20),
+            _isLoading
+                ? Image.asset('assets/animations/loading.gif')
+                : Visibility(
+                    visible: !_isLoading,
+                    child: buildDataTable(),
+                  ),
+            // if (_apiResponse.isNotEmpty)
+            //   buildDataTable(),  // Display DataTable if data is available
+          ],
+        ),
+      ),
+    );
+  }
 
 List<Map<String, String>> _traitBasedMovieDetails = [];
 
