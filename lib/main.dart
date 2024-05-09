@@ -525,7 +525,7 @@ Future<void> _getMovieRecommendations() async {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'movie_titles': movieTitles,
-        'alpha': 0.0,
+        'alpha': 1.0,
         'num_movies': 5
       }),
     );
