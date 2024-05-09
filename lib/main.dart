@@ -174,8 +174,8 @@ class _MyHomePageState extends State<MyHomePage> {
         // Ensure the movie map contains the keys before accessing them
         if (movie.containsKey(traitKey) && movie.containsKey(evidenceKey)) {
           String fullKey = '${movie['title']} - ${movie[traitKey]}';
-          
-          // Ensure the item is initially checked by default
+
+          // Initialize the item as checked by default only if it's not already in the map
           if (!userResonatedData.containsKey(fullKey)) {
             userResonatedData[fullKey] = {
               'trait': movie[traitKey],
@@ -193,13 +193,15 @@ class _MyHomePageState extends State<MyHomePage> {
             onChanged: (bool? value) {
               setState(() {
                 if (value == true) {
-                  userResonatedData[fullKey] = {
-                    'trait': movie[traitKey],
-                    'evidence': movie[evidenceKey],
-                    'movie': movie['title']
-                  };
-                  // Optionally add to recommendations data
-                  userResonatedDataForRecommendations[attributeKey]?.add(movie[traitKey]);
+                  if (!userResonatedData.containsKey(fullKey)) { // Check if not already added
+                    userResonatedData[fullKey] = {
+                      'trait': movie[traitKey],
+                      'evidence': movie[evidenceKey],
+                      'movie': movie['title']
+                    };
+                    // Optionally add to recommendations data
+                    userResonatedDataForRecommendations[attributeKey]?.add(movie[traitKey]);
+                  }
                 } else {
                   userResonatedData.remove(fullKey);
                   // Optionally remove from recommendations data
