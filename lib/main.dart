@@ -174,27 +174,22 @@ class _MyHomePageState extends State<MyHomePage> {
         // Ensure the movie map contains the keys before accessing them
         if (movie.containsKey(traitKey) && movie.containsKey(evidenceKey)) {
           String fullKey = '${movie['title']} - ${movie[traitKey]}';
-
-          // Assuming you want every checkbox to start as checked
-          // Initialize userResonatedData to include this item if it's not already present
+          
+          // Ensure the item is initially checked by default
           if (!userResonatedData.containsKey(fullKey)) {
             userResonatedData[fullKey] = {
               'trait': movie[traitKey],
               'evidence': movie[evidenceKey],
               'movie': movie['title']
             };
-          }
-
-          // Add trait to recommendations data if it's meant to be there by default
-          userResonatedDataForRecommendations[attributeKey] ??= [];
-          if (!userResonatedDataForRecommendations[attributeKey]!.contains(movie[traitKey])) {
-            userResonatedDataForRecommendations[attributeKey]!.add(movie[traitKey]);
+            // Optionally add to recommendations data
+            userResonatedDataForRecommendations[attributeKey]?.add(movie[traitKey]);
           }
 
           listItems.add(CheckboxListTile(
             title: Text(movie[traitKey], style: const TextStyle(color: Color(0xFFF2DBAF))),
             subtitle: Text(movie[evidenceKey], style: const TextStyle(color: Color(0xFFF2DBAF))),
-            value: userResonatedData.containsKey(fullKey),  // This will check if the key exists
+            value: userResonatedData.containsKey(fullKey),
             onChanged: (bool? value) {
               setState(() {
                 if (value == true) {
@@ -203,9 +198,11 @@ class _MyHomePageState extends State<MyHomePage> {
                     'evidence': movie[evidenceKey],
                     'movie': movie['title']
                   };
+                  // Optionally add to recommendations data
                   userResonatedDataForRecommendations[attributeKey]?.add(movie[traitKey]);
                 } else {
                   userResonatedData.remove(fullKey);
+                  // Optionally remove from recommendations data
                   userResonatedDataForRecommendations[attributeKey]?.remove(movie[traitKey]);
                 }
               });
