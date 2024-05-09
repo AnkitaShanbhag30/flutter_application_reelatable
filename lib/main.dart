@@ -1,8 +1,9 @@
+// ignore_for_file: prefer_interpolation_to_compose_strings
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:lottie/lottie.dart';
 
 void main() {
   runApp(const MyApp());
@@ -149,6 +150,7 @@ class _MyHomePageState extends State<MyHomePage> {
         setState(() {
           movies.add(data);
           _errorMessage = '';
+          _addAllTraitsToUserResonatedData(data);
         });
       } else {
         setState(() {
@@ -161,6 +163,41 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
   }
+
+  void _addAllTraitsToUserResonatedData(Map<String, dynamic> movieData) {
+    List<String> attributeKeys = ['flaws', 'personality_traits', 'desires', 'beliefs'];
+    for (var attributeKey in attributeKeys) {
+      for (int i = 1; i <= 5; i++) {
+        var traitKey = '${attributeKey}_${i}_trait';
+        var evidenceKey = '${attributeKey}_${i}_evidence';
+        if (movieData.containsKey(traitKey) && movieData.containsKey(evidenceKey)) {
+          String fullKey = '${movieData['title']} - ${movieData[traitKey]}';
+          userResonatedData[fullKey] = {
+            'trait': movieData[traitKey],
+            'evidence': movieData[evidenceKey],
+            'movie': movieData['title']
+          };
+        }
+      }
+    }
+  }
+
+  // void _removeAllTraitsFromUserResonatedData(Map<String, dynamic> movie) {
+  //   String title = movie['title'];
+  //   List<String> attributeKeys = ['flaws', 'personality_traits', 'desires', 'beliefs'];
+  //   for (var attributeKey in attributeKeys) {
+  //     for (int i = 1; i <= 5; i++) {
+  //       var traitKey = '${attributeKey}_${i}_trait';
+  //       var evidenceKey = '${attributeKey}_${i}_evidence';
+  //       if (movie.containsKey(traitKey) && movie.containsKey(evidenceKey)) {
+  //         String fullKey = '$title - ${movie[traitKey]}';
+  //         userResonatedData.remove(fullKey);
+  //         // Also remove from userResonatedDataForRecommendations
+  //         userResonatedDataForRecommendations[attributeKey]?.remove(movie[traitKey]);
+  //       }
+  //     }
+  //   }
+  // }
 
   Widget attributeList(Map<String, dynamic> movie, String attributeKey) {
     List<Widget> listItems = [];
@@ -434,6 +471,15 @@ Widget homeTab() {
                       },
                     ),
                   ),
+                  Positioned(
+                    left: 0,
+                    bottom: 0,
+                    child: TextButton(
+                      onPressed: () => _addAllTraitsToUserResonatedData(movie),
+                      style: TextButton.styleFrom(backgroundColor: Colors.red),
+                      child: const Text('Add Traits', style: TextStyle(color: Colors.white)),
+                    )
+                  )
                 ],
               );
             }).toList(),
@@ -632,35 +678,6 @@ void _showMovieDetails(String title, String overview) {
       ),
     );
   }
-
-  // Widget patternsTab() {
-  //   return  Center(
-  //     child: SingleChildScrollView(
-  //       child: Column(
-  //         children: <Widget>[
-  //           ElevatedButton(
-  //             onPressed: () {
-  //               setState(() {
-  //                 isLoading = true; // Set isLoading to true when button is clicked
-  //               });
-  //               getMoviePatterns();
-  //             },
-  //             child: const Text('Show Patterns in Selected Traits'),
-  //           ),
-  //           if (isLoading)
-  //             SizedBox(
-  //               width: 200,  // Set the width of the animation
-  //               height: 200,  // Set the height of the animation
-  //               child: Image.asset('assets/animations/loading.gif'),
-  //             ),
-  //           if (_apiResponse.isNotEmpty)
-  //             buildDataTable(),  // Display DataTable if data is available
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-  // State to hold movie poster URLs for trait-based recommendations
 
 List<Map<String, String>> _traitBasedMovieDetails = [];
 
